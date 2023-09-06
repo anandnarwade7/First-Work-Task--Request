@@ -1,0 +1,233 @@
+package com.fin.model.request;
+
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import javax.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Column;
+import com.fin.model.client.Client;
+import com.fin.model.user.User;
+
+@Entity
+@Table(name = "requests")
+public class ClientRequest implements Serializable {
+  
+    private static final long serialVersionUID = 12341439120L;
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long requestId;
+
+   // @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "due_date")
+    private Date dueDate;    
+    
+    @ManyToOne 
+    @JoinColumn(name = "client_id", nullable = false)
+    private Client client;
+
+    @ManyToOne  
+    @JoinColumn(name = "reporter_id", nullable = false)
+    private User reporter;
+
+    String  requestType;
+    
+    private String selectDatabase;
+    private String selectEditType;
+    private String selectLineItem;        
+    private String details;
+    private boolean status;
+
+    //@Temporal(TemporalType.TIMESTAMP) 
+    @Column(name = "edited_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    private Date editedOn;
+
+    //@Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Date createdOn;
+
+    @PrePersist
+    protected void prePersistFunction() {
+    	Calendar calendar = Calendar.getInstance();  
+        calendar.set(Calendar.DAY_OF_MONTH, 31);
+        calendar.add(Calendar.MONTH, 1);
+        this.dueDate = calendar.getTime();
+        this.createdOn = new Date();
+        this.editedOn = new Date();    
+    }
+    @PreUpdate
+    protected void preUpdateFunction() {
+        this.editedOn = new Date();
+    }
+
+    public Long getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(Long requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getFormattedDueDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd ");
+        return dateFormat.format(dueDate);
+    }
+
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public User getReporter() {
+        return reporter;
+    }
+
+    public void setReporter(User reporter) {
+        this.reporter = reporter;
+    }
+
+    public String getRequestType() {
+        return requestType;
+    }
+
+    public void setRequestType(String requestType) {
+        this.requestType = requestType;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    public String getSelectDatabase() {
+        return selectDatabase;
+    }
+
+    public void setSelectDatabase(String selectDatabase) {
+        this.selectDatabase = selectDatabase;
+    }
+
+    public String getSelectEditType() {
+        return selectEditType;
+    }
+
+    public void setSelectEditType(String selectEditType) {
+        this.selectEditType = selectEditType;
+    }
+
+    public String getSelectLineItem() {
+        return selectLineItem;
+    }
+
+    public void setSelectLineItem(String selectLineItem) {
+        this.selectLineItem = selectLineItem;
+    }
+
+    public ClientRequest() {
+        super();
+    }
+
+    public Date getEditedOn() {
+        return editedOn;
+    }
+
+    public Date getCreatedOn() {
+        return createdOn;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientRequest [requestId=" + requestId + ", dueDate=" + dueDate + ", client=" + client + ", reporter="
+                + reporter + ", requestType=" + requestType + ", selectDatabase=" + selectDatabase + ", selectEditType="
+                + selectEditType + ", selectLineItem=" + selectLineItem + ", details=" + details + ", status=" + status
+                + ", editedOn=" + editedOn + ", createdOn=" + createdOn + "]";
+    }
+}
+
+
+
+look i have that constructor which 
+you have provided now if im not providing status through json then it is considering status as boolean
+
+
+
+
+if (st==true) {
+                	 if (request.getStatus() == Status.NEW) {
+                         request.markInProgress();
+                         repository.update(request);
+				}return request;}
+				else {
+
+
+
+
+
+
+
+
+
+    else {
+//	                throw new Exception("Request is not in the 'New' status and cannot be reviewed.");
+//	            }
+//	        } else {
+//	            throw new Exception("Request ID not found.");
+//	        }
+	    
+			//return  request; 
+			//return null;
+
+
+
+
+@Put("/review1/{id}")
+	    public ClientRequest reviewRequest1(Long id) throws Exception {
+	        Optional<ClientRequest> optionalRequest = repository.findById(id);
+
+	        if (optionalRequest.isPresent()) {
+	            ClientRequest request = optionalRequest.get();
+	            
+	            if (request.getStatus() == Status.IN_PROGRESS) {	
+	            	if (responseStatus=="Incomplete") {
+	            		 request.markCompleted();
+	 	                repository.update(request);
+	 	                // Update the static variable to indicate completion
+	 	                responseStatus = "Complete";
+	 	                return request;
+					}
+						request.markRejected();
+						repository.update(request);
+	            }
+	               
+	      } 
+	 
+       }
