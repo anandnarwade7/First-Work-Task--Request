@@ -1,233 +1,395 @@
 package com.fin.model.request;
 
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Date;
-import javax.persistence.Id;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Column;
-import com.fin.model.client.Client;
-import com.fin.model.user.User;
+import com.fin.model.logs.AuditLog;
+import com.fin.model.logs.AuditLogRepository;
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
+import jakarta.inject.Inject;
 
-@Entity
-@Table(name = "requests")
-public class ClientRequest implements Serializable {
-  
-    private static final long serialVersionUID = 12341439120L;
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long requestId;
+@ExecuteOn(TaskExecutors.IO)
+@Controller("/requests")
+public class ClientRequestController {
+	
+	AuditLog al;
+	 @Inject
+	 private AuditLogRepository alr;
+	protected final ClientRequestRepository repository;
 
-   // @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "due_date")
-    private Date dueDate;    
-    
-    @ManyToOne 
-    @JoinColumn(name = "client_id", nullable = false)
-    private Client client;
+	public ClientRequestController(ClientRequestRepository repos) {
+		this.repository = repos;
+		}
+	
+	@Get("/list")
+	public List<ClientRequest> getAll() throws Exception{
+		return (List<ClientRequest>) repository.findAll();
+	}
 
-    @ManyToOne  
-    @JoinColumn(name = "reporter_id", nullable = false)
-    private User reporter;
-
-    String  requestType;
-    
-    private String selectDatabase;
-    private String selectEditType;
-    private String selectLineItem;        
-    private String details;
-    private boolean status;
-
-    //@Temporal(TemporalType.TIMESTAMP) 
-    @Column(name = "edited_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private Date editedOn;
-
-    //@Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Date createdOn;
-
-    @PrePersist
-    protected void prePersistFunction() {
-    	Calendar calendar = Calendar.getInstance();  
-        calendar.set(Calendar.DAY_OF_MONTH, 31);
-        calendar.add(Calendar.MONTH, 1);
-        this.dueDate = calendar.getTime();
-        this.createdOn = new Date();
-        this.editedOn = new Date();    
-    }
-    @PreUpdate
-    protected void preUpdateFunction() {
-        this.editedOn = new Date();
-    }
-
-    public Long getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(Long requestId) {
-        this.requestId = requestId;
-    }
-
-    public String getFormattedDueDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd ");
-        return dateFormat.format(dueDate);
-    }
-
-    public void setDueDate(Date dueDate) {
-        this.dueDate = dueDate;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
-    }
-
-    public User getReporter() {
-        return reporter;
-    }
-
-    public void setReporter(User reporter) {
-        this.reporter = reporter;
-    }
-
-    public String getRequestType() {
-        return requestType;
-    }
-
-    public void setRequestType(String requestType) {
-        this.requestType = requestType;
-    }
-
-    public String getDetails() {
-        return details;
-    }
-
-    public void setDetails(String details) {
-        this.details = details;
-    }
-
-    public boolean isStatus() {
-        return status;
-    }
-
-    public void setStatus(boolean status) {
-        this.status = status;
-    }
-
-    public String getSelectDatabase() {
-        return selectDatabase;
-    }
-
-    public void setSelectDatabase(String selectDatabase) {
-        this.selectDatabase = selectDatabase;
-    }
-
-    public String getSelectEditType() {
-        return selectEditType;
-    }
-
-    public void setSelectEditType(String selectEditType) {
-        this.selectEditType = selectEditType;
-    }
-
-    public String getSelectLineItem() {
-        return selectLineItem;
-    }
-
-    public void setSelectLineItem(String selectLineItem) {
-        this.selectLineItem = selectLineItem;
-    }
-
-    public ClientRequest() {
-        super();
-    }
-
-    public Date getEditedOn() {
-        return editedOn;
-    }
-
-    public Date getCreatedOn() {
-        return createdOn;
-    }
-
-    @Override
-    public String toString() {
-        return "ClientRequest [requestId=" + requestId + ", dueDate=" + dueDate + ", client=" + client + ", reporter="
-                + reporter + ", requestType=" + requestType + ", selectDatabase=" + selectDatabase + ", selectEditType="
-                + selectEditType + ", selectLineItem=" + selectLineItem + ", details=" + details + ", status=" + status
-                + ", editedOn=" + editedOn + ", createdOn=" + createdOn + "]";
-    }
-}
-
-
-
-look i have that constructor which 
-you have provided now if im not providing status through json then it is considering status as boolean
-
-
-
-
-if (st==true) {
-                	 if (request.getStatus() == Status.NEW) {
-                         request.markInProgress();
-                         repository.update(request);
-				}return request;}
-				else {
-
-
-
-
-
-
-
-
-
-    else {
-//	                throw new Exception("Request is not in the 'New' status and cannot be reviewed.");
-//	            }
-//	        } else {
-//	            throw new Exception("Request ID not found.");
-//	        }
+	@Get
+	public List<ClientRequest> getAllData() {
+	    List<ClientRequest> requests = (List<ClientRequest>) repository.findAll();
 	    
-			//return  request; 
-			//return null;
+	    for (ClientRequest request : requests) {
+	        try {
+	            // Attempt to parse the Status field, set it to NEW if parsing fails
+	            request.setStatus(Status.valueOf(request.getStatus().name()));
+	        } catch (IllegalArgumentException e) {
+	            request.setStatus(Status.NEW); // Set a default value
+	        }
+	    }
+	
+	   //al.setAction("Fetched ClientRequests");
+	    return requests;
+	    
+	}
+	
+/////////////////////////To Save into AuditLog//////////////////////////////////// 
+	@Get("/get")
+	public List<ClientRequest> getAllData1() {
+	    List<ClientRequest> requests = (List<ClientRequest>) repository.findAll();
+	   // al.setReporter(null);al.setSourceDoc(null);al.setLineItem(null);al.setAction(null);
+	    for (ClientRequest existingRequest : requests) {
+	        try {
+	            
+	            existingRequest.setStatus(Status.valueOf(existingRequest.getStatus().name()));
+	        } catch (IllegalArgumentException e) {
+	            existingRequest.setStatus(Status.NEW); // Set a default value
+	        }
+	        
+	        //al.setReporter(existingRequest.getReporter().getId());
+	        //al.setSourceDoc(existingRequest.getRequestType());
+	        //al.setLineItem(existingRequest.getSelectLineItem());
+	        al.setAction("All  Request fetched by " + existingRequest.getReporter().getName() + " Email- "+
+	        existingRequest.getReporter().getEmail() + " is a " + existingRequest.getReporter().getRole());
+	        System.out.println(al.getLogId());
+	        System.out.println(al.getAction());
+	        System.out.println(al.getLineItem());
+	        System.out.println(al.getSourceDoc());
+	        System.out.println(al.getCreatedOn());   
+	        System.out.println(al);
+	    }
+	    System.out.println(al);
+	    alr.save(al);
+	    System.out.println(alr);
+	    return requests;
+	}
+	
+////////////////////To have Specific Request "for requester....."///////////////////////////////////
+	@Get("/myrequest/{id}")
+	public Optional<ClientRequest> get(Long id) {
+		
+		al.setAction("Fetched ClientRequests by Ids"+id);
+		return repository.findById(id);
+	}
 
+////////////////////////To Edit & Update the Request.....////////////////////////////
+	
+	@Put("/{id}")
+	public ClientRequest update(Long id, @Body ClientRequest object) throws Exception {
+		if (repository.existsById(id)) {
+			object.setRequestId(id);
+			repository.update(object);
+			al.setAction("Edit ClientRequests by Id"+id);
+			return object;
+		} else {
+			
+			throw new Exception("Id Not Found");
+		}
+	}
+//////////////////To Edit & Update the Request.....& Save Record into the AuditLog/////////////
+	@Put("/update/{id}")
+	public ClientRequest update1(@QueryValue Long id, @Body ClientRequest object) throws Exception {
+	    if (repository.existsById(id)) {
+	        // Get the existing client request to retrieve reporter information
+	        ClientRequest existingRequest = repository.findById(id).orElse(null);        
 
+	        if (existingRequest != null) {
+	        	object.setCreatedOn(existingRequest.getCreatedOn());
+                object.setDueDate(existingRequest.getDueDate());
+                object.setEditedOn(new Date());
+	            al.setReporter(existingRequest.getReporter().getId());
+	            al.setSourceDoc(existingRequest.getRequestType());
+	            al.setLineItem(existingRequest.getSelectLineItem());
+	            al.setAction("Request with ID " + existingRequest.getRequestId() + " edited by "
+	            +existingRequest.getReporter().getRole().getRoleName()+" "+existingRequest.getReporter().getName());
 
+	            System.out.println(al.getLogId());
+	            System.out.println(al.getAction());
+	            System.out.println(al.getLineItem());
+	            System.out.println(al.getSourceDoc());
+	            System.out.println(al.getCreatedOn());
 
-@Put("/review1/{id}")
-	    public ClientRequest reviewRequest1(Long id) throws Exception {
+	            alr.save(al); // Save the audit log entry
+	        }
+	        object.setEditedOn(new Date());
+	        object.setRequestId(id);
+	        repository.update(object);
+
+	        return object;
+	    } else {
+	        throw new Exception("Id Not Found");
+	    }
+	}
+//////////////////////////////////////////////////////////////////////////////////////
+
+	@Post
+	public ClientRequest add(@Body ClientRequest object) {
+	    
+		return repository.save(object);
+	}
+//////////////////////////////Post Request & Save Record into the AuditLog/////////////////////////////////
+	 @Post("/add")
+	 public ClientRequest add2(@Body ClientRequest object) {
+	     ClientRequest savedObject = repository.save(object);
+	     AuditLog al = new AuditLog();
+	     if (savedObject != null) {
+	       //al.setLogId(object.getRequestId());
+	    	 al.setReporter(object.getReporter().getId());
+	         al.setCreatedOn(object.getCreatedOn());
+	         al.setSourceDoc(object.getRequestType());
+	         al.setLineItem(object.getSelectLineItem());
+	         if (savedObject.getReporter() != null && savedObject.getReporter().getId() != 0) {
+	             al.setAction("Request with ID " + savedObject.getRequestId()  + " added by"+savedObject.getReporter().getName());
+	         } else {
+	             al.setAction("Request added, but reporter or reporter's name is null.");
+	         }	        
+	         alr.save(al);
+	         System.out.println(al.getLogId());
+	         System.out.println(al.getAction());
+	         System.out.println(al.getLineItem());
+	         System.out.println(al.getSourceDoc());
+	         System.out.println(al.getCreatedOn());
+	         
+	     } else {
+	         System.out.println("Saved object is null. Audit log not created.");
+	     }
+
+	     return savedObject;
+	 }
+	 
+//////////////////////////////////////////////////////////////////////////
+	//to change status after reviewing request by "Admin"
+	@Put("/review/{id}")
+    public ClientRequest reviewRequest(Long id) throws Exception {
+        Optional<ClientRequest> optionalRequest = repository.findById(id);
+
+        if (optionalRequest.isPresent()) {
+            ClientRequest request = optionalRequest.get();
+
+            if (request.getStatus() == Status.NEW) {
+                request.markInProgress();
+                repository.update(request);
+//                al.setAction("Added ClientRequests"+id);
+                return request;
+            } else {
+                throw new Exception("Request is not in the 'New' status and cannot be reviewed.");
+            }
+        } else {
+            throw new Exception("Request ID not found.");
+        }
+    }
+	
+	 
+///////////////////to change Status based on response/////////////////
+	@Put("/review2/{id}")
+	public ClientRequest reviewRequest11(Long id, @QueryValue(defaultValue = "") String response) throws Exception {
+		Optional<ClientRequest> optionalRequest = repository.findById(id);
+		
+		if (optionalRequest.isPresent()) {
+			ClientRequest request = optionalRequest.get();
+			
+			if (!response.isEmpty()) {
+				if ("yes".equalsIgnoreCase(response)) {
+					request.markCompleted();
+					repository.update(request);
+				} else if ("no".equalsIgnoreCase(response)) {
+					request.markRejected();
+					repository.update(request);
+				} else {
+					throw new Exception("Invalid response. Use 'yes' or 'no'.");
+				}
+			}
+			
+			return request;
+		} else {
+			throw new Exception("Request ID not found.");
+		}
+	}
+	
+	
+///////////////////////////To add Comment & Save Record into the AuditLog////////////////////////////////////
+	    @Put("/addComment/{id}")
+	    public ClientRequest addCommentToRequest(@QueryValue Long id, @Body Map<String, String> requestBody) throws Exception {
 	        Optional<ClientRequest> optionalRequest = repository.findById(id);
 
 	        if (optionalRequest.isPresent()) {
 	            ClientRequest request = optionalRequest.get();
-	            
-	            if (request.getStatus() == Status.IN_PROGRESS) {	
-	            	if (responseStatus=="Incomplete") {
-	            		 request.markCompleted();
-	 	                repository.update(request);
-	 	                // Update the static variable to indicate completion
-	 	                responseStatus = "Complete";
-	 	                return request;
-					}
-						request.markRejected();
-						repository.update(request);
-	            }
-	               
-	      } 
-	 
-       }
+	            String commentText = requestBody.get("commentText");
+	            Date originalCreatedOn = request.getCreatedOn();
+	            Date originalDueDate = request.getDueDate();
+	            request.setComment(commentText);
+	            request.setEditedOn(new Date());
+	            request.setCreatedOn(originalCreatedOn);
+	            request.setDueDate(originalDueDate);
+	            repository.update(request);
+	            AuditLog al = new AuditLog();
+	            al.setReporter(request.getReporter().getId());
+	            al.setSourceDoc(request.getRequestType());
+	            al.setLineItem(request.getSelectLineItem());
+	            al.setAction("Added comment to Request with ID " + request.getRequestId() + " by "
+	                    + request.getReporter().getName());
+	            alr.save(al);
+
+	            return request;
+	        } else {
+	            throw new Exception("Request ID not found.");
+	        }
+	    }
+//////////////////////////////////////////DELETE/////////////////////////////////////////////////
+@Delete("/{id}")
+public void delete(Long id) throws Exception {
+	if (repository.existsById(id)) {
+		repository.deleteById(id);
+		al.setAction("Added ClientRequests"+id);
+	} else {
+		throw new Exception("Id Not Found");
+	}
+}
+///////////////////////DELETE & Save Record into the AuditLog/////////////////////////
+@Delete("/delete/{id}")
+public void deleteq(@QueryValue Long id) throws Exception {
+	if (repository.existsById(id)) {
+		// Get the ClientRequest to retrieve reporter information
+		ClientRequest savedObject = repository.findById(id).orElse(null);
+		
+		if (savedObject != null) {
+			AuditLog al = new AuditLog();
+			al.setReporter(savedObject.getReporter().getId());
+			al.setSourceDoc(savedObject.getRequestType());
+			al.setLineItem(savedObject.getSelectLineItem());
+			
+			// Update the action to indicate request deletion
+			al.setAction("Request with ID " + savedObject.getRequestId() + " deleted by "+
+					savedObject.getReporter().getName());
+			
+			System.out.println(al.getLogId());
+			System.out.println(al.getAction());
+			System.out.println(al.getLineItem());
+			System.out.println(al.getSourceDoc());
+			System.out.println(al.getCreatedOn());
+			
+			alr.save(al); // Save the audit log entry
+		}
+		
+		repository.deleteById(id);
+	  } else {
+		throw new Exception("Id Not Found");
+	 }
+   }
+}
+
+
+
+//	 @Post("/add")
+//	 public ClientRequest add2(@Body ClientRequest object) {
+//	     ClientRequest savedObject = repository.save(object);
+//	     AuditLog al = new AuditLog();
+//	     al.setLogId(object.getRequestId());
+//	     al.setCreatedOn(object.getCreatedOn());
+//	     al.setSourceDoc(object.getRequestType());	
+//	     al.setLineItem(object.getSelectLineItem());
+//	     al.setAction("Request with ID " + savedObject.getReporter().getName() + " added.");
+//	  System.out.println(al.getLogId());   
+//	  System.out.println(al.getAction());
+//	  System.out.println(al.getLineItem());
+//	  System.out.println(al.getSourceDoc());
+//	  System.out.println(al.getCreatedOn());
+//	     alr.save(al);
+//
+//	     return savedObject;
+//	 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	 @Post("/add")
+//	 public AuditLog initializeAction(@Body ClientRequest object) {
+//	     AuditLog al = new AuditLog();
+//
+//	     // Check if object is not null
+//	     if (object != null) {
+//	         al.setLogId(object.getRequestId()); // Set logId to requestId
+//
+//	         // Check if object.getReporter() and getId() are not null
+//	         if (object.getReporter() != null && object.getReporter().getId() != null) {
+//	             al.setAction("Request with ID " + object.getReporter().getId() + " added.");
+//
+//	             // Output logId to console
+//	             System.out.println("Log ID: " + al.getLogId());
+//	         } else {
+//	             // Handle the case where object.getReporter() or its id is null
+//	             al.setAction("Request added, but reporter or reporter's id is null.");
+//	         }
+//
+//	         // Set other properties like lineItem, sourceDoc, etc.
+//
+//	         // Save the audit log entry
+//	         alr.save(al);
+//
+//	         return al;
+//	     } else {
+//	         // Handle the case where object is null
+//	         System.out.println("Received a null object. Audit log not created.");
+//	         return null; // or handle default action as needed
+//	     }
+//	 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	@Post("/create")
+//	public MutableHttpResponse<String> createClientRequest(@Body ClientRequest clientRequest) {
+//        clientRequest.setDueDate(LocalDate.now().plusMonths(1).withDayOfMonth(28));
+//        ClientRequest savedRequest = repository.save(clientRequest);
+//        return HttpResponse.ok("ClientRequest created successfully with ID: " + savedRequest.getRequestId());
+//    }
+
+//	 private static String responseStatus = "Incomplete";
+//
+//		public static String getResponseStatus() {
+//			return responseStatus;
+//		}
+//
+//		public static void setResponseStatus(String responseStatus) {
+//			ClientRequestController.responseStatus = responseStatus;
+//		}
+//	 @Put("/review1/{id}")
+//	    public ClientRequest reviewRequest1(Long id) throws Exception {
+//	        Optional<ClientRequest> optionalRequest = repository.findById(id);
+//
+//	        if (optionalRequest.isPresent()) {
+//	            ClientRequest request = optionalRequest.get();
+//
+//	            if (request.getStatus() == Status.IN_PROGRESS) {
+//	                if ("Incomplete".equals(responseStatus)) {
+//	                    request.markCompleted();
+//	                    repository.update(request);
+//	                    responseStatus = "Complete";
+//	                } else {
+//	                    request.markRejected();
+//	                    repository.update(request);
+//	                    responseStatus = "Rejected";
+//	                }
+//	                return request;
+//	            } else {
+//	                throw new Exception("Request is not in the 'InProgress' status and cannot be reviewed.");
+//	            }
+//	        } else {
+//	            throw new Exception("Request ID not found.");
+//	        }
+//	    }
